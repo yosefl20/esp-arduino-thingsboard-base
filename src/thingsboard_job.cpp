@@ -1,5 +1,5 @@
-#include "tbJob.h"
-#include "tbJobCfg.h"
+#include "thingsboard_job.h"
+#include "thingsboard_job_cfg.h"
 #include <EEPROM.h>
 #include <ThingsBoard.h>
 #if defined(ESP8266)

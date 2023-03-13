@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <MicroTasks.h>
-#include <tbJob.h>
-#include <wifiJob.h>
+#include <thingsboard_job.h>
+#include <wifi_job.h>
 
 WifiJob wifi;
 ThingsboardJob tbjob;
