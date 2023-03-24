@@ -2,6 +2,7 @@
 #include "thingsboard_job_cfg.h"
 #include <EEPROM.h>
 #include <ThingsBoard.h>
+#include <thingsboard_messages.h>
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
 // Disable PROGMEM because the ESP8266WiFi library,
@@ -332,6 +333,20 @@ unsigned long ThingsboardJob::loop(MicroTasks::WakeReason reason) {
         updateRequestSent = tb.Start_Firmware_Update(callback);
       }
 
+      if (WakeReason_Message == reason) {
+        MicroTasks::Message *msg;
+        while (this->receive(msg)) {
+          Serial.print("Got message ");
+          Serial.println(TBTelemetryMessage<float, 1000>::ID() == msg->id()
+                             ? "TBTelemetryFloatMessage"
+                             : "UNKNOWN");
+          if (TBTelemetryMessage<float, 1000>::ID() == msg->id()) {
+            TBTelemetryMessage<float, 1000> *telemetry =
+                static_cast<TBTelemetryMessage<float, 1000> *>(msg);
+            telemetry->sendIot(tb);
+          }
+        }
+      }
       // send data here
       // #if THINGSBOARD_ENABLE_PROGMEM
       //       Serial.println(F("Sending telemetry..."));
