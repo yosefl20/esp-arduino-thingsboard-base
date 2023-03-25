@@ -236,16 +236,36 @@ void ThingsboardJob::setup() {
 }
 
 unsigned long ThingsboardJob::loop(MicroTasks::WakeReason reason) {
+
+  if (WakeReason_Message == reason) {
+    MicroTasks::Message *msg;
+    if (this->receive(msg)) {
+      if (tb.connected()) {
+        // Serial.print("Got message ");
+        // Serial.println(TBTelemetryMessage<float, 1000>::ID() == msg->id()
+        //                    ? "TBTelemetryMessage"
+        //                    : "UNKNOWN");
+        // if (TBTelemetryMessage<float, 1000>::ID() == msg->id()) {
+        //   TBTelemetryMessage<float, 1000> *telemetry =
+        //       static_cast<TBTelemetryMessage<float, 1000> *>(msg);
+        //   telemetry->sendIot(tb);
+        // }
+      }
+      delete msg;
+    }
+    return 10 | MicroTask.WaitForMessage;
+  }
+
   if (WiFi.status() == WL_NO_SHIELD) {
 #if THINGSBOARD_ENABLE_PROGMEM
     Serial.println(F("WiFi shield not present"));
 #else
     Serial.println("WiFi shield not present");
 #endif
-    return 1000;
+    return 1000 | MicroTask.WaitForMessage;
   }
   if (millis() - previous_processing_time < 1000) {
-    return 500;
+    return 500 | MicroTask.WaitForMessage;
   }
   previous_processing_time = millis();
 
@@ -260,7 +280,7 @@ unsigned long ThingsboardJob::loop(MicroTasks::WakeReason reason) {
 #else
         Serial.println("Failed to connect");
 #endif
-        return 100;
+        return 100 | MicroTask.WaitForMessage;
       }
 #if THINGSBOARD_ENABLE_PROGMEM
       Serial.println(F("Sending provisioning request"));
@@ -305,7 +325,7 @@ unsigned long ThingsboardJob::loop(MicroTasks::WakeReason reason) {
         // wipped out eeprom
         clearCfg();
         provisionRequestSent = provisionResponseProcessed = false;
-        return 1000;
+        return 1000 | MicroTask.WaitForMessage;
       } else {
 #if THINGSBOARD_ENABLE_PROGMEM
         Serial.println(F("Connected!"));
@@ -333,20 +353,6 @@ unsigned long ThingsboardJob::loop(MicroTasks::WakeReason reason) {
         updateRequestSent = tb.Start_Firmware_Update(callback);
       }
 
-      if (WakeReason_Message == reason) {
-        MicroTasks::Message *msg;
-        while (this->receive(msg)) {
-          Serial.print("Got message ");
-          Serial.println(TBTelemetryMessage<float, 1000>::ID() == msg->id()
-                             ? "TBTelemetryFloatMessage"
-                             : "UNKNOWN");
-          if (TBTelemetryMessage<float, 1000>::ID() == msg->id()) {
-            TBTelemetryMessage<float, 1000> *telemetry =
-                static_cast<TBTelemetryMessage<float, 1000> *>(msg);
-            telemetry->sendIot(tb);
-          }
-        }
-      }
       // send data here
       // #if THINGSBOARD_ENABLE_PROGMEM
       //       Serial.println(F("Sending telemetry..."));
@@ -359,5 +365,5 @@ unsigned long ThingsboardJob::loop(MicroTasks::WakeReason reason) {
   }
 
   tb.loop();
-  return 10;
+  return 10 | MicroTask.WaitForMessage;
 }
